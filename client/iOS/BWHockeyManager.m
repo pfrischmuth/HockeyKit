@@ -252,7 +252,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:kHockeyAuthorizedToken];
     
     if (version != nil && token != nil) {
-        if ([version compare:[self appVersion] == NSOrderedSame) {
+        if ([version compare:[self appVersion]] == NSOrderedSame) {
             // if it is denied, block the screen permanently
             if ([token compare:[self authenticationToken]] != NSOrderedSame) {
                 return HockeyAuthorizationDenied;
