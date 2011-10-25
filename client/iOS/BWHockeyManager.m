@@ -55,6 +55,7 @@
 - (NSString *)installationDateString;
 - (NSString *)authenticationToken;
 - (HockeyAuthorizationState)authorizationState;
+- (NSString *)appVersion;
 
 @property (nonatomic, assign, getter=isUpdateAvailable) BOOL updateAvailable;
 @property (nonatomic, assign, getter=isCheckInProgress) BOOL checkInProgress;
@@ -189,14 +190,14 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     if (![[NSUserDefaults standardUserDefaults] valueForKey:kUsageTimeForVersionString]) {
         newVersion = YES;
     } else {
-        if ([(NSString *)[[NSUserDefaults standardUserDefaults] valueForKey:kUsageTimeForVersionString] compare:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]] != NSOrderedSame) {
+        if ([(NSString *)[[NSUserDefaults standardUserDefaults] valueForKey:kUsageTimeForVersionString] compare:[self appVersion]] != NSOrderedSame) {
             newVersion = YES;
         }
     }
     
     if (newVersion) {
         [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithDouble:[[NSDate date] timeIntervalSinceReferenceDate]] forKey:kDateOfVersionInstallation];
-        [[NSUserDefaults standardUserDefaults] setObject:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] forKey:kUsageTimeForVersionString];
+        [[NSUserDefaults standardUserDefaults] setObject:[self appVersion] forKey:kUsageTimeForVersionString];
         [[NSUserDefaults standardUserDefaults] setObject:[NSNumber numberWithDouble:0] forKey:kUsageTimeOfCurrentVersion];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }    
@@ -239,7 +240,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
 - (NSString *)authenticationToken {
     return [BWmd5([NSString stringWithFormat:@"%@%@%@%@", 
                    authenticationSecret_, 
-                   [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"],
+                   [self appVersion],
                    [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"],
                    [self deviceIdentifier]
                    ]
@@ -251,7 +252,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     NSString *token = [[NSUserDefaults standardUserDefaults] objectForKey:kHockeyAuthorizedToken];
     
     if (version != nil && token != nil) {
-        if ([version compare:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]] == NSOrderedSame) {
+        if ([version compare:[self appVersion] == NSOrderedSame) {
             // if it is denied, block the screen permanently
             if ([token compare:[self authenticationToken]] != NSOrderedSame) {
                 return HockeyAuthorizationDenied;
@@ -337,6 +338,12 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     return NO;
 }
 
+- (NSString *)appVersion
+{
+    return [NSString stringWithFormat:@"%@ (%@)",
+        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"],
+        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"]];
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark -
@@ -350,7 +357,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
         dataFound = NO;
         updateAvailable_ = NO;
         lastCheckFailed_ = NO;
-        currentAppVersion_ = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+        currentAppVersion_ = [self appVersion];
         navController_ = nil;
         authorizeView_ = nil;
         requireAuthorization_ = NO;
@@ -647,7 +654,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     NSMutableString *parameter = [NSMutableString stringWithFormat:@"api/2/apps/%@", [[self encodedAppIdentifier_] bw_URLEncodedString]];
     
     [parameter appendFormat:@"?format=json&authorize=yes&app_version=%@&udid=%@",
-     [[[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] bw_URLEncodedString],
+     [[[self appVersion] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] bw_URLEncodedString],
      [[self deviceIdentifier] bw_URLEncodedString]
      ];
     
@@ -683,7 +690,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
                 // identical token, activate this version
                 
                 // store the new data
-                [[NSUserDefaults standardUserDefaults] setObject:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] forKey:kHockeyAuthorizedVersion];
+                [[NSUserDefaults standardUserDefaults] setObject:[self appVersion] forKey:kHockeyAuthorizedVersion];
                 [[NSUserDefaults standardUserDefaults] setObject:token forKey:kHockeyAuthorizedToken];
                 [[NSUserDefaults standardUserDefaults] synchronize];
                 
@@ -699,7 +706,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
                 BWHockeyLog(@"AUTH FAILURE: %@", [self authenticationToken]);
                                 
                 // store the new data
-                [[NSUserDefaults standardUserDefaults] setObject:[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] forKey:kHockeyAuthorizedVersion];
+                [[NSUserDefaults standardUserDefaults] setObject:[self appVersion] forKey:kHockeyAuthorizedVersion];
                 [[NSUserDefaults standardUserDefaults] setObject:token forKey:kHockeyAuthorizedToken];
                 [[NSUserDefaults standardUserDefaults] synchronize];
                 
@@ -743,7 +750,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     // add additional statistics if user didn't disable flag
     if ([self canSendUserData]) {
         [parameter appendFormat:@"&app_version=%@&os=iOS&os_version=%@&device=%@&lang=%@&first_start_at=%@",
-         [[[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] bw_URLEncodedString],
+         [[[self appVersion] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] bw_URLEncodedString],
          [[[UIDevice currentDevice] systemVersion] bw_URLEncodedString],
          [[self getDevicePlatform_] bw_URLEncodedString],
          [[[[NSBundle mainBundle] preferredLocalizations] objectAtIndex:0] bw_URLEncodedString],
