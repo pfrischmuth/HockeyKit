@@ -203,7 +203,6 @@ class Router
     {
         foreach ($_GET as $key => $value) {
             $value = urldecode($value);
-            Logger::log('Arg: ' . $value);
             $this->args[$key] = $value;
             $this->args_get[$key] = $value;
             unset($_GET[$key]);
