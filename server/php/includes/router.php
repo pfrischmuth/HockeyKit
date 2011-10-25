@@ -202,12 +202,14 @@ class Router
     protected function collect_arguments()
     {
         foreach ($_GET as $key => $value) {
+            $value = urldecode($value);
             Logger::log('Arg: ' . $value);
             $this->args[$key] = $value;
             $this->args_get[$key] = $value;
             unset($_GET[$key]);
         }
         foreach ($_POST as $key => $value) {
+            $value = urldecode($value);
             $this->args[$key] = $value;
             $this->args_post[$key] = $value;
             unset($_POST[$key]);
