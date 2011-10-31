@@ -267,9 +267,9 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
 - (void)checkUpdateAvailable_ {
     // check if there is an update available
     if (self.compareVersionType == HockeyComparisonResultGreater) {
-        self.updateAvailable = ([self.app.version compare:self.currentAppVersion options:NSNumericSearch] == NSOrderedDescending);
+        self.updateAvailable = ([[NSString stringWithFormat:@"%@ (%@)", self.app.shortVersion, self.app.version] compare:self.currentAppVersion options:NSNumericSearch] == NSOrderedDescending);
     } else {
-        self.updateAvailable = ([self.app.version compare:self.currentAppVersion] != NSOrderedSame);
+        self.updateAvailable = ([[NSString stringWithFormat:@"%@ (%@)", self.app.shortVersion, self.app.version] compare:self.currentAppVersion options:NSLiteralSearch] != NSOrderedSame);
     }
 }
 
@@ -357,7 +357,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
         dataFound = NO;
         updateAvailable_ = NO;
         lastCheckFailed_ = NO;
-        currentAppVersion_ = [self appVersion];
+        currentAppVersion_ = [[self appVersion] retain];
         navController_ = nil;
         authorizeView_ = nil;
         requireAuthorization_ = NO;
@@ -433,6 +433,7 @@ static NSString *kHockeyErrorDomain = @"HockeyErrorDomain";
     [lastCheck_ release];
     [usageStartTimestamp_ release];
     [authenticationSecret_ release];
+    [currentAppVersion_ release];
     
     [super dealloc];
 }
